@@ -4,6 +4,19 @@ A small userscript that hides combo / bundle / "Max Combo" listings from
 AliExpress search and category pages, so the grid only shows single-item
 listings.
 
+## Screenshots
+
+**v2 — combo deals hidden** (default), with an inline counter and
+**Show** toggle above the grid:
+
+![Hidden state](./screenshots/hidden.png)
+
+**v2 — combo deals shown** after clicking *Show* (combo cards are the
+ones that were previously hidden — outlined here just to show what was
+removed):
+
+![Shown state](./screenshots/shown.png)
+
 ## Why
 
 AliExpress increasingly pads search results with multi-item bundles ("Max
@@ -41,9 +54,13 @@ updates automatically when this repo changes.
 
 ### One-click install
 
-Click this link with a userscript manager installed:
+Two versions are published — pick one (or install both, they have
+distinct names so they won't collide):
 
-<https://raw.githubusercontent.com/danielrosehill/AliExpress-No-Combo-Deals/main/aliexpress-no-combo.user.js>
+- **v2 (recommended)** — adds a floating counter and Show/Hide toggle:
+  <https://raw.githubusercontent.com/danielrosehill/AliExpress-No-Combo-Deals/main/aliexpress-no-combo-v2.user.js>
+- **v1** — silent, hide-only, minimal:
+  <https://raw.githubusercontent.com/danielrosehill/AliExpress-No-Combo-Deals/main/aliexpress-no-combo.user.js>
 
 Tampermonkey/Violentmonkey will intercept the `.user.js` URL and prompt
 you to install.
