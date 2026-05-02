@@ -120,7 +120,15 @@ versions automatically (default: once a day). To force-check now:
 ![Tampermonkey: Check for updates](./screenshots/tampermonkey-check-updates.png)
 
 If a newer `@version` is on `main`, Tampermonkey will fetch it and
-prompt you to confirm the update.
+prompt you to confirm the update. Afterwards the dashboard reflects the
+new version:
+
+![Tampermonkey: after update](./screenshots/tampermonkey-after-update.png)
+
+> **Note:** GitHub's `raw.githubusercontent.com` CDN caches files for
+> ~5 minutes. If you check for updates immediately after a `@version`
+> bump, you may get the old cached copy — wait a few minutes and try
+> again.
 
 ## Verify it's working
 
