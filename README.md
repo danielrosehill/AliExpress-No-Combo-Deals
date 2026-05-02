@@ -67,15 +67,38 @@ updates automatically when this repo changes.
 ### One-click install
 
 Two versions are published — pick one (or install both, they have
-distinct names so they won't collide):
+distinct names so they won't collide).
 
-- **v2 (recommended)** — adds a floating counter and Show/Hide toggle:
-  <https://raw.githubusercontent.com/danielrosehill/AliExpress-No-Combo-Deals/main/aliexpress-no-combo-v2.user.js>
-- **v1** — silent, hide-only, minimal:
-  <https://raw.githubusercontent.com/danielrosehill/AliExpress-No-Combo-Deals/main/aliexpress-no-combo.user.js>
+**v2 (recommended)** — adds a counter and Show/Hide toggle:
 
-Tampermonkey/Violentmonkey will intercept the `.user.js` URL and prompt
-you to install.
+```
+https://raw.githubusercontent.com/danielrosehill/AliExpress-No-Combo-Deals/main/aliexpress-no-combo-v2.user.js
+```
+
+**v1** — silent, hide-only, minimal:
+
+```
+https://raw.githubusercontent.com/danielrosehill/AliExpress-No-Combo-Deals/main/aliexpress-no-combo.user.js
+```
+
+### Step-by-step (Tampermonkey)
+
+1. Open the Tampermonkey **Dashboard** → **Utilities** tab.
+2. Paste the v2 URL above into the **Import from URL** field and click
+   **Install**.
+
+   ![Tampermonkey: Import from URL](./screenshots/tampermonkey-import.png)
+
+3. The script preview screen appears — click **Install**.
+
+   ![Tampermonkey: Install confirmation](./screenshots/tampermonkey-install.png)
+
+4. Reload any open AliExpress tab. You should see the dark
+   `"X combo deals hidden [Show]"` badge above the search grid.
+
+Tampermonkey/Violentmonkey will also intercept the `.user.js` URL if you
+just click it directly in a browser — same install screen, one fewer
+step.
 
 ### Manual install
 
