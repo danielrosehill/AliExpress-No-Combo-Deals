@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AliExpress — Hide Combo Deals (with Toggle)
 // @namespace    https://github.com/danielrosehill/AliExpress-No-Combo-Deals
-// @version      2.0.0
+// @version      2.1.0
 // @description  Hide combo / bundle / "Max Combo" listings from AliExpress. Adds a floating counter and a Show/Hide toggle.
 // @author       Daniel Rosehill
 // @match        https://*.aliexpress.com/*
@@ -79,7 +79,7 @@
     });
 
     countEl = document.createElement('span');
-    countEl.textContent = '0 combo deals hidden';
+    countEl.textContent = '0 Max Combo deals excluded';
 
     toggleBtn = document.createElement('button');
     Object.assign(toggleBtn.style, {
@@ -118,7 +118,7 @@
   function updateBadge() {
     if (!badge) buildBadge();
     const n = flagged.size;
-    countEl.textContent = `${n} combo deal${n === 1 ? '' : 's'} ${showing ? 'shown' : 'hidden'}`;
+    countEl.textContent = `${n} Max Combo deal${n === 1 ? '' : 's'} ${showing ? 'shown' : 'excluded'}`;
     badge.style.display = n === 0 ? 'none' : 'flex';
   }
 

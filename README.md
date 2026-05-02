@@ -108,6 +108,20 @@ step.
 4. Save.
 5. Reload any open AliExpress tabs.
 
+### Pulling updates
+
+The script declares `@updateURL`, so Tampermonkey will pull new
+versions automatically (default: once a day). To force-check now:
+
+1. Open the Tampermonkey **Dashboard** and click the script name to
+   open it.
+2. **File → Check for updates**.
+
+![Tampermonkey: Check for updates](./screenshots/tampermonkey-check-updates.png)
+
+If a newer `@version` is on `main`, Tampermonkey will fetch it and
+prompt you to confirm the update.
+
 ## Verify it's working
 
 Open an AliExpress search page (e.g. `aliexpress.com/w/wholesale-tape-dispenser.html`)
