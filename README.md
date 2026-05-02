@@ -4,18 +4,19 @@ A small userscript that hides combo / bundle / "Max Combo" listings from
 AliExpress search and category pages, so the grid only shows single-item
 listings.
 
-## Screenshots
+## Before / after
 
-**v2 — combo deals hidden** (default), with an inline counter and
-**Show** toggle above the grid:
+**Before** — AliExpress search results with combo deals interspersed
+(the cards outlined in red are bundles where the headline price is
+conditional on buying multiple units):
 
-![Hidden state](./screenshots/hidden.png)
+![Before — combo deals visible](./screenshots/before.png)
 
-**v2 — combo deals shown** after clicking *Show* (combo cards are the
-ones that were previously hidden — outlined here just to show what was
-removed):
+**After** — same search with the userscript installed. Combo cards are
+removed; an inline counter sits above the grid with a **Show** toggle
+in case you want to see what was filtered out:
 
-![Shown state](./screenshots/shown.png)
+![After — combo deals removed](./screenshots/after.png)
 
 ## Why
 
