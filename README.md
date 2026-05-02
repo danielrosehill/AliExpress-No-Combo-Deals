@@ -19,10 +19,22 @@ removed):
 
 ## Why
 
-AliExpress increasingly pads search results with multi-item bundles ("Max
-Combo", "Combo deal", etc.) where the headline price refers to the bundle
-rather than the individual item. They clutter the grid and make price
-comparison harder. This script removes them.
+**Purpose: exclude AliExpress search results for items that are only
+available via combo deals** — i.e. listings where the headline price is
+conditional on buying a multi-item bundle ("Max Combo", "Combo deal",
+"Bundle deal", etc.) rather than reflecting the price of a single unit.
+
+These cards pollute search results because:
+
+- The displayed price is the bundle price, not the single-unit price, so
+  they break price-sorting and price-comparison.
+- The actual single-unit price (if available at all) is usually higher
+  than competing single-item listings.
+- They're often pushed to the top of the grid by AliExpress's promo
+  ranking, displacing genuine single-item options.
+
+This script strips them out so the grid only shows listings you can
+actually buy as a single item at the price shown.
 
 ## What it hides
 
