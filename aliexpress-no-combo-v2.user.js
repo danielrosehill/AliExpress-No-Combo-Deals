@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         AliExpress — Hide Combo Deals (with Toggle)
 // @namespace    https://github.com/danielrosehill/AliExpress-No-Combo-Deals
-// @version      2.4.0
-// @description  Hide combo / bundle / "Max Combo" listings from AliExpress search, plus an optional "Hide over $72" price filter. A labelled bar above the results holds both switches and remembers them.
+// @version      2.5.0
+// @description  Hide combo / bundle / "Max Combo" listings from AliExpress search, plus a max-price slider (up to $72) and a one-click "Choice All In" (Choice + Free shipping) search filter. A labelled bar above the results holds them all.
 // @author       Daniel Rosehill
 // @match        https://*.aliexpress.com/*
 // @match        https://aliexpress.com/*
@@ -31,16 +31,22 @@
   // /item/<id>.html (verified 2026-10-26). Locale-independent, unlike the text markers.
   const BUNDLE_LINK = 'a[href*="BundleDeals"]';
 
-  // Price filter. $72 leaves headroom under Israel's $75 customs de-minimis. The card
-  // price is the first price on the card (the sale price; verified 2026-10-26). On the
-  // ILS channel it is converted at ILS_PER_USD, an approximate rate: edit it if the
-  // shekel moves much.
-  const PRICE_LIMIT_USD = 72;
+  // Max-price slider. Stops in USD; null = any price. The top stop is $72, which leaves
+  // headroom under Israel's $75 customs de-minimis. The card price is the first price
+  // on the card (the sale price; verified 2026-10-26). On the ILS channel it is
+  // converted at ILS_PER_USD, an approximate rate: edit it if the shekel moves much.
+  const PRICE_STOPS = [null, 10, 20, 30, 40, 50, 60, 70, 72];
   const ILS_PER_USD = 3.7;
   const PRICE_RE = /(US ?\$|₪|\$) ?([\d,]+(?:\.\d+)?)/;
 
+  // Server-side search filters applied together in one navigation. Comma-joined
+  // selectedSwitches is honoured: both chips read aria-checked=true and the result
+  // set changes (verified 2026-10-26, usb c cable). Navigating is deliberate: a chip
+  // click can update the URL without re-rendering the grid.
+  const COMBO_SWITCHES = ['filterCode:choice_atm', 'filterCode:freeshipping'];
+
   const KEY_SHOW_BUNDLES = 'no-combo:showing';
-  const KEY_HIDE_PRICEY = 'no-combo:hide-over-limit';
+  const KEY_MAX_PRICE = 'no-combo:max-price';
 
   // Version stamp, read by the update-userscripts skill in aliexpress-israel-skills.
   if (typeof GM_info !== 'undefined') {
@@ -49,7 +55,7 @@
 
   // Switch state, remembered across pages. Bundles hidden by default; price filter off.
   let showBundles = localStorage.getItem(KEY_SHOW_BUNDLES) === '1';
-  let hidePricey = localStorage.getItem(KEY_HIDE_PRICEY) === '1';
+  let maxPrice = PRICE_STOPS.includes(+localStorage.getItem(KEY_MAX_PRICE)) ? +localStorage.getItem(KEY_MAX_PRICE) : null;
 
   // Every cell we've seen, with what we learned about it.
   const cells = new Map(); // cell -> { bundle, usd }
@@ -67,7 +73,7 @@
 
   function applyVisibility(cell) {
     const info = cells.get(cell);
-    const hide = (info.bundle && !showBundles) || (hidePricey && info.usd != null && info.usd > PRICE_LIMIT_USD);
+    const hide = (info.bundle && !showBundles) || (maxPrice != null && info.usd != null && info.usd > maxPrice);
     cell.style.display = hide ? 'none' : '';
   }
 
@@ -93,7 +99,34 @@
   // Labelled as a userscript and styled unlike AliExpress's own UI, so it's
   // obviously an add-on.
 
-  let bar, bundleBox, bundleCount, priceBox, priceCount;
+  let bar, bundleBox, bundleCount, priceSlider, priceLabel, priceCount;
+
+  function currentSwitches() {
+    const v = new URL(location.href).searchParams.get('selectedSwitches');
+    return v ? v.split(',').filter(Boolean) : [];
+  }
+
+  function makeComboButton() {
+    const on = COMBO_SWITCHES.every(sw => currentSwitches().includes(sw));
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = on ? '✓ Choice All In' : 'Choice All In';
+    btn.title = on ? 'Remove Choice + Free shipping' : 'Apply AliExpress\'s Choice and Free shipping filters at once';
+    Object.assign(btn.style, {
+      background: on ? '#16a34a' : 'transparent', color: '#fff', border: '1px solid #a78bfa',
+      borderRadius: '6px', padding: '4px 10px', font: 'inherit', fontWeight: '600', cursor: 'pointer',
+    });
+    btn.addEventListener('click', () => {
+      const url = new URL(location.href);
+      let sw = currentSwitches().filter(x => !COMBO_SWITCHES.includes(x));
+      if (!on) sw = sw.concat(COMBO_SWITCHES);
+      if (sw.length) url.searchParams.set('selectedSwitches', sw.join(','));
+      else url.searchParams.delete('selectedSwitches');
+      url.searchParams.delete('page');
+      location.assign(url.toString());
+    });
+    return btn;
+  }
 
   function makeSwitch(text, checked, onChange) {
     const label = document.createElement('label');
@@ -144,15 +177,31 @@
     });
     bundleBox = b.box; bundleCount = b.count;
 
-    const p = makeSwitch(`Hide over $${PRICE_LIMIT_USD}`, hidePricey, on => {
-      hidePricey = on;
-      localStorage.setItem(KEY_HIDE_PRICEY, on ? '1' : '0');
+    // Max-price slider: leftmost = any price.
+    const p = document.createElement('label');
+    Object.assign(p.style, { display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '600' });
+    priceSlider = document.createElement('input');
+    priceSlider.type = 'range';
+    priceSlider.min = '0';
+    priceSlider.max = String(PRICE_STOPS.length - 1);
+    priceSlider.step = '1';
+    priceSlider.value = String(PRICE_STOPS.indexOf(maxPrice));
+    priceSlider.style.width = '120px';
+    priceSlider.style.cursor = 'pointer';
+    priceSlider.addEventListener('input', () => {
+      maxPrice = PRICE_STOPS[+priceSlider.value];
+      if (maxPrice == null) localStorage.removeItem(KEY_MAX_PRICE);
+      else localStorage.setItem(KEY_MAX_PRICE, String(maxPrice));
       cells.forEach((_, cell) => applyVisibility(cell));
       updateBar();
     });
-    priceBox = p.box; priceCount = p.count;
+    priceLabel = document.createElement('span');
+    priceLabel.style.minWidth = '88px';
+    priceCount = document.createElement('span');
+    Object.assign(priceCount.style, { fontWeight: '400', opacity: '0.8' });
+    p.append(priceLabel, priceSlider, priceCount);
 
-    bar.append(tag, b.label, p.label);
+    bar.append(tag, b.label, p, makeComboButton());
     mountBar();
   }
 
@@ -171,12 +220,12 @@
     let bundles = 0, pricey = 0;
     cells.forEach(info => {
       if (info.bundle) bundles++;
-      if (info.usd != null && info.usd > PRICE_LIMIT_USD) pricey++;
+      if (maxPrice != null && info.usd != null && info.usd > maxPrice) pricey++;
     });
     bundleBox.checked = showBundles;
-    priceBox.checked = hidePricey;
     bundleCount.textContent = `(${bundles} ${showBundles ? 'shown' : 'hidden'})`;
-    priceCount.textContent = `(${pricey} ${hidePricey ? 'hidden' : 'over'})`;
+    priceLabel.textContent = maxPrice == null ? 'Any price' : `Max $${maxPrice}`;
+    priceCount.textContent = maxPrice == null ? '' : `(${pricey} hidden)`;
     // Only on search/category pages, where there are result cells.
     bar.style.display = cells.size === 0 ? 'none' : 'flex';
   }

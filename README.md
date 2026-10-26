@@ -98,17 +98,23 @@ https://raw.githubusercontent.com/danielrosehill/AliExpress-No-Combo-Deals/main/
 
 4. Reload any open AliExpress tab. Above the search grid you should see a dark bar
    with a dashed purple border and a **USERSCRIPT** tag (so it's clearly not
-   AliExpress's own UI), holding two switches (v2.4.0+):
+   AliExpress's own UI), holding (v2.5.0+):
    - `☐ Show bundle deals (N hidden)`: off by default, so bundles are hidden.
-   - `☐ Hide over $72 (N over)`: off by default. When ticked, hides cards whose
-     price is over $72, which leaves headroom under Israel's $75 customs
-     de-minimis. Prices in ₪ are converted at `ILS_PER_USD` (3.7; edit it in the
-     script). The card price is the cheapest variant's, so a hidden card is over
-     $72 for every variant, but a shown one may still be over for the variant you want.
-   Both settings are remembered across pages.
+   - **Max-price slider**: Any price → $10, $20 … $70, $72. Hides cards whose price
+     is over the setting. The top stop is $72, which leaves headroom under Israel's
+     $75 customs de-minimis. Prices in ₪ are converted at `ILS_PER_USD` (3.7; edit it
+     in the script). The card price is the cheapest variant's, so a hidden card is
+     over the limit for every variant, but a shown one may still be over for the
+     variant you want.
+   - **Choice All In**: one click applies AliExpress's own *Choice* and *Free
+     shipping* search filters together (it reloads the search with
+     `selectedSwitches=filterCode:choice_atm,filterCode:freeshipping`). Shows
+     `✓ Choice All In` when both are on; click again to remove both.
+   The switch and slider settings are remembered across pages.
 
-Price filter verified live 2026-10-26 on `mini pc` (60 cards, 58 over $72): exactly
-those 58 hidden.
+Verified live 2026-10-26: price filter on `mini pc` (58 of 60 over $72, exactly those
+hidden) and `8BitDo SN30 Pro` at $30 (16 of 16 hidden, none wrongly); Choice All In
+turned both chips on (`aria-checked=true`) and changed the result set.
 
 Verified live 2026-10-26 (signed in, IL, EN/USD), full 60-card pages: `8BitDo Lite 2`
 7 of 7 bundle cards hidden, `usb c cable` 17 of 17, no ordinary card hidden on
