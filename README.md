@@ -62,7 +62,7 @@ a refresh keeps it. Verified 2026-10-26 on `bluetooth gamepad`: 10 pages, 600 it
 in 50 s, 10 requests, no captcha, 0 filter violations; pages 6–10 still yielded
 5–15 matches each.
 
-Settings are kept in `localStorage` (`no-combo:settings`) and hold across refreshes.
+Out of the box only bundle deals are hidden; every other filter is off until you turn it on. Settings are kept in `localStorage` (`no-combo:settings-v2`) and hold across refreshes. 2.6.1 reset everyone to these defaults once, dropping price limits carried over from 2.5.
 Filtered cards are hidden by a `data-nc-hide` attribute plus a stylesheet rule,
 not inline style. **Brand+ pages** (`/ssr/300002748/…`) are a virtualised list, so
 cards there are dimmed, not hidden; sort, deep search and AliExpress filters don't

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AliExpress — Hide Combo Deals (with Toggle)
 // @namespace    https://github.com/danielrosehill/AliExpress-No-Combo-Deals
-// @version      2.6.0
+// @version      2.6.1
 // @description  Cleaner AliExpress search results: hide combo / bundle deals and ads, a price range (max up to $72), rating / sales / title-word filters, duplicate collapsing, client-side sort, deep search (load up to 20 pages into one filtered grid), and one-click Choice + Free shipping. Basics sit in a bar above the results; the rest is one click away in a Filters panel. Also filters (dims) Brand+ brand pages.
 // @author       Daniel Rosehill
 // @match        https://*.aliexpress.com/*
@@ -64,7 +64,10 @@
   const FOUR_STAR = 'filterCode:4StarRating';
   const SHIP_FROM = [['', 'Anywhere'], ['IL', 'Israel'], ['CN', 'China'], ['TR', 'Turkey']];
 
-  const KEY_SETTINGS = 'no-combo:settings';
+  // Out of the box only bundle deals are hidden; every other filter is opt-in.
+  // The key changed in 2.6.1 so everyone starts again from these defaults once,
+  // dropping price limits carried over from 2.5.
+  const KEY_SETTINGS = 'no-combo:settings-v2';
   const DEFAULTS = {
     enabled: true, showBundles: false, hideAds: false, maxPrice: null, minPrice: null,
     minRating: null, hideUnrated: false, minSold: null, dedupe: false, sort: 'best',
@@ -81,12 +84,6 @@
   function loadSettings() {
     let s = {};
     try { s = JSON.parse(localStorage.getItem(KEY_SETTINGS)) || {}; } catch (e) { s = {}; }
-    if (!localStorage.getItem(KEY_SETTINGS)) {
-      // Carry over the 2.2–2.5 keys.
-      s.showBundles = localStorage.getItem('no-combo:showing') === '1';
-      const mp = +localStorage.getItem('no-combo:max-price');
-      s.maxPrice = PRICE_STOPS.includes(mp) ? mp : null;
-    }
     return Object.assign({}, DEFAULTS, s, { words: Object.assign({}, s.words) });
   }
   const S = loadSettings();
