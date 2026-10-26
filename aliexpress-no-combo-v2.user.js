@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AliExpress — Hide Combo Deals (with Toggle)
 // @namespace    https://github.com/danielrosehill/AliExpress-No-Combo-Deals
-// @version      2.5.0
+// @version      2.5.1
 // @description  Hide combo / bundle / "Max Combo" listings from AliExpress search, plus a max-price slider (up to $72) and a one-click "Choice All In" (Choice + Free shipping) search filter. A labelled bar above the results holds them all.
 // @author       Daniel Rosehill
 // @match        https://*.aliexpress.com/*
@@ -58,7 +58,7 @@
   let maxPrice = PRICE_STOPS.includes(+localStorage.getItem(KEY_MAX_PRICE)) ? +localStorage.getItem(KEY_MAX_PRICE) : null;
 
   // Every cell we've seen, with what we learned about it.
-  const cells = new Map(); // cell -> { bundle, usd }
+  const cells = new Map(); // cell -> { bundle, usd, priceHidden }
 
   const norm = s => (s || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').toLowerCase();
   const isCombo = cell =>
@@ -73,8 +73,10 @@
 
   function applyVisibility(cell) {
     const info = cells.get(cell);
-    const hide = (info.bundle && !showBundles) || (maxPrice != null && info.usd != null && info.usd > maxPrice);
-    cell.style.display = hide ? 'none' : '';
+    const bundleHidden = info.bundle && !showBundles;
+    // Counted only when price is the sole reason, so the two counts add up to what's hidden.
+    info.priceHidden = !bundleHidden && maxPrice != null && info.usd != null && info.usd > maxPrice;
+    cell.style.display = bundleHidden || info.priceHidden ? 'none' : '';
   }
 
   function scan(root) {
@@ -83,12 +85,10 @@
     const found = doc.querySelectorAll(CELL_SELECTOR);
     (found.length ? found : doc.querySelectorAll(CARD_SELECTOR)).forEach(card => {
       const cell = card.closest(CELL_SELECTOR) || card;
-      // Re-check cells on every scan until both facts are known: a cell can render
-      // before its BundleDeals link or its price hydrates.
-      const info = cells.get(cell) || { bundle: false, usd: null };
-      if (!info.bundle) info.bundle = isCombo(cell);
-      if (info.usd == null) info.usd = priceUsd(cell);
-      cells.set(cell, info);
+      // Re-read every cell on every scan. A cell can render before its BundleDeals
+      // link or price hydrates, and paging (same document) reuses the cell nodes for
+      // other products: a cached verdict hid normal items on page 2 (2026-10-26).
+      cells.set(cell, { bundle: isCombo(cell), usd: priceUsd(cell), priceHidden: false });
       applyVisibility(cell);
     });
     for (const cell of cells.keys()) if (!cell.isConnected) cells.delete(cell);
@@ -99,24 +99,33 @@
   // Labelled as a userscript and styled unlike AliExpress's own UI, so it's
   // obviously an add-on.
 
-  let bar, bundleBox, bundleCount, priceSlider, priceLabel, priceCount;
+  let bar, bundleBox, bundleCount, priceSlider, priceLabel, priceCount, comboBtn;
 
   function currentSwitches() {
     const v = new URL(location.href).searchParams.get('selectedSwitches');
     return v ? v.split(',').filter(Boolean) : [];
   }
 
+  const comboOn = () => COMBO_SWITCHES.every(sw => currentSwitches().includes(sw));
+
+  // State is read from the URL on every bar update, not once at load: paging and
+  // AliExpress's own filter chips change the URL without reloading the page.
+  function syncComboButton() {
+    const on = comboOn();
+    comboBtn.textContent = on ? '✓ Choice All In' : 'Choice All In';
+    comboBtn.title = on ? 'Remove Choice + Free shipping' : 'Apply AliExpress\'s Choice and Free shipping filters at once';
+    comboBtn.style.background = on ? '#16a34a' : 'transparent';
+  }
+
   function makeComboButton() {
-    const on = COMBO_SWITCHES.every(sw => currentSwitches().includes(sw));
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.textContent = on ? '✓ Choice All In' : 'Choice All In';
-    btn.title = on ? 'Remove Choice + Free shipping' : 'Apply AliExpress\'s Choice and Free shipping filters at once';
     Object.assign(btn.style, {
-      background: on ? '#16a34a' : 'transparent', color: '#fff', border: '1px solid #a78bfa',
+      color: '#fff', border: '1px solid #a78bfa',
       borderRadius: '6px', padding: '4px 10px', font: 'inherit', fontWeight: '600', cursor: 'pointer',
     });
     btn.addEventListener('click', () => {
+      const on = comboOn();
       const url = new URL(location.href);
       let sw = currentSwitches().filter(x => !COMBO_SWITCHES.includes(x));
       if (!on) sw = sw.concat(COMBO_SWITCHES);
@@ -201,7 +210,8 @@
     Object.assign(priceCount.style, { fontWeight: '400', opacity: '0.8' });
     p.append(priceLabel, priceSlider, priceCount);
 
-    bar.append(tag, b.label, p, makeComboButton());
+    comboBtn = makeComboButton();
+    bar.append(tag, b.label, p, comboBtn);
     mountBar();
   }
 
@@ -217,11 +227,15 @@
 
   function updateBar() {
     if (!bar) buildBar();
+    // Remount if a re-render dropped the bar, or if it booted before the grid existed.
+    const grid = document.querySelector('#card-list');
+    if (!bar.isConnected || (grid && bar.nextElementSibling !== grid)) mountBar();
     let bundles = 0, pricey = 0;
     cells.forEach(info => {
       if (info.bundle) bundles++;
-      if (maxPrice != null && info.usd != null && info.usd > maxPrice) pricey++;
+      if (info.priceHidden) pricey++;
     });
+    syncComboButton();
     bundleBox.checked = showBundles;
     bundleCount.textContent = `(${bundles} ${showBundles ? 'shown' : 'hidden'})`;
     priceLabel.textContent = maxPrice == null ? 'Any price' : `Max $${maxPrice}`;
@@ -235,18 +249,16 @@
   buildBar();
   scan(document);
 
+  // Text and href changes count too: a reused cell can change product in place.
+  // The bar's own updates are ignored, or every scan would schedule another.
   const obs = new MutationObserver(muts => {
-    let touched = false;
-    for (const m of muts) {
-      for (const n of m.addedNodes) {
-        if (n.nodeType === 1) { touched = true; break; }
-      }
-      if (touched) break;
-    }
+    const touched = muts.some(m =>
+      !(bar && bar.contains(m.target)) &&
+      (m.type !== 'childList' || [...m.addedNodes].some(n => n !== bar)));
     if (touched) {
       clearTimeout(obs._t);
       obs._t = setTimeout(() => scan(document), 150);
     }
   });
-  obs.observe(document.body, { childList: true, subtree: true });
+  obs.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['href'] });
 })();

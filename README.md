@@ -174,8 +174,12 @@ outlined in red rather than removed.
 - Avoids matching on AliExpress's hashed/obfuscated CSS classes
   (`lw_*`, `hm_*`, etc.) which rotate between builds.
 - Uses a `MutationObserver` to catch infinite-scroll and SPA re-renders, and
-  re-checks unflagged cards on every pass (a card can render before its bundle
-  link hydrates).
+  re-reads every card on every pass. A card can render before its bundle link
+  hydrates, and paging reuses the same grid cells for other products, so no
+  verdict is cached per cell (v2.5.1 fix: 2.5.0 kept page-1 bundle flags and hid
+  normal items on page 2). The Choice All In button reads its state from the URL
+  on every pass, because paging and AliExpress's own filter chips don't reload
+  the page.
 - v2.2.0+ stamps its installed version on the page as
   `<html data-us-no-combo="2.2.0">`, so a tool can tell which version is running
   without opening the Tampermonkey dashboard. The
