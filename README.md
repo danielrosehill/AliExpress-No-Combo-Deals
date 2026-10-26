@@ -37,6 +37,37 @@ These cards pollute search results because:
 This script strips them out so the grid only shows listings you can
 actually buy as a single item at the price shown.
 
+## v2.6.0: filters panel and deep search
+
+Top row (always visible): **On** switch, **Show bundle deals**, **Hide ads**, **Max
+price** slider, **Choice All In**, **Deep search**, **Filters ▾**, and a
+"Showing X of Y" count. The Filters panel holds collapsible sections:
+
+- **Price**: min price (drops $1–3 bait listings).
+- **Rating & sales**: min rating, hide unrated, min sold.
+- **Title words**: per search, `word` / `"phrase"` required, `-word` / `-"phrase"`
+  excluded; plus an "Always hide" list for every search.
+- **Duplicates**: collapse listings whose titles share 80% of their words.
+- **Sort this page**: price, most sold, top rated, best value
+  (rating above 3★ × log(sales) ÷ √price).
+- **Deep search**: pages to load (5/10/15/20) and auto-stop.
+- **AliExpress filters**: 4★ & up, Ships from (these reload the search).
+
+**Deep search** loads pages 1..N of the current search into one grid, so every
+filter and the sort reach the long tail. It calls the endpoint the page itself
+uses when you page (`POST /fn/search-pc/index`), one page every 1.5–3 s. Each card
+is tagged with its page, and the panel shows matches per page, so you can see
+where the signal runs out. The set is cached for the browser session (30 min), so
+a refresh keeps it. Verified 2026-10-26 on `bluetooth gamepad`: 10 pages, 600 items
+in 50 s, 10 requests, no captcha, 0 filter violations; pages 6–10 still yielded
+5–15 matches each.
+
+Settings are kept in `localStorage` (`no-combo:settings`) and hold across refreshes.
+Filtered cards are hidden by a `data-nc-hide` attribute plus a stylesheet rule,
+not inline style. **Brand+ pages** (`/ssr/300002748/…`) are a virtualised list, so
+cards there are dimmed, not hidden; sort, deep search and AliExpress filters don't
+apply there.
+
 ## What it hides
 
 Cards that link to AliExpress's bundle landing page
