@@ -39,7 +39,9 @@ actually buy as a single item at the price shown.
 
 ## What it hides
 
-Cards whose visible text contains any of:
+Cards that link to AliExpress's bundle landing page
+(`/ssr/300000512/BundleDeals2?productIds=…`, v2.2.0+; works in any language), and
+cards whose visible text contains any of:
 
 - `Max Combo`
 - `Combo deal`
@@ -95,7 +97,8 @@ https://raw.githubusercontent.com/danielrosehill/AliExpress-No-Combo-Deals/main/
    ![Tampermonkey: Install confirmation](./screenshots/tampermonkey-install.png)
 
 4. Reload any open AliExpress tab. You should see the dark
-   `"X combo deals hidden [Show]"` badge above the search grid.
+   `☑ Hide bundle deals (N hidden)` switch above the search grid (v2.2.0+).
+   Untick it to show them; the setting is remembered across pages.
 
 Tampermonkey/Violentmonkey will also intercept the `.user.js` URL if you
 just click it directly in a browser — same install screen, one fewer
@@ -150,7 +153,14 @@ outlined in red rather than removed.
   product card) and `.search-item-card-wrapper-gallery` (the grid cell).
 - Avoids matching on AliExpress's hashed/obfuscated CSS classes
   (`lw_*`, `hm_*`, etc.) which rotate between builds.
-- Uses a `MutationObserver` to catch infinite-scroll and SPA re-renders.
+- Uses a `MutationObserver` to catch infinite-scroll and SPA re-renders, and
+  re-checks unflagged cards on every pass (a card can render before its bundle
+  link hydrates).
+- v2.2.0+ stamps its installed version on the page as
+  `<html data-us-no-combo="2.2.0">`, so a tool can tell which version is running
+  without opening the Tampermonkey dashboard. The
+  [Aliexpress-Israel-Skills](https://github.com/danielrosehill/Aliexpress-Israel-Skills)
+  plugin's `update-userscripts` skill uses it.
 
 ## Licence
 

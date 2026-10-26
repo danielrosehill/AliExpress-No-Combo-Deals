@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         AliExpress — Hide Combo Deals (with Toggle)
 // @namespace    https://github.com/danielrosehill/AliExpress-No-Combo-Deals
-// @version      2.1.0
-// @description  Hide combo / bundle / "Max Combo" listings from AliExpress. Adds a floating counter and a Show/Hide toggle.
+// @version      2.2.0
+// @description  Hide combo / bundle / "Max Combo" listings from AliExpress. Adds a counter and a Hide bundle deals switch that remembers its setting.
 // @author       Daniel Rosehill
 // @match        https://*.aliexpress.com/*
 // @match        https://aliexpress.com/*
@@ -27,26 +27,39 @@
 
   const CARD_SELECTOR = '.search-card-item';
   const CELL_SELECTOR = '.search-item-card-wrapper-gallery';
+  // Bundle cards link to /ssr/300000512/BundleDeals2?productIds=<id>:<sku> instead of
+  // /item/<id>.html (verified 2026-10-26). Locale-independent, unlike the text markers.
+  const BUNDLE_LINK = 'a[href*="BundleDeals"]';
+  const STORE_KEY = 'no-combo:showing';
 
-  // State: are combo cards currently visible? Default: hidden.
-  let showing = false;
+  // Version stamp, read by the update-userscripts skill in aliexpress-israel-skills.
+  if (typeof GM_info !== 'undefined') {
+    document.documentElement.setAttribute('data-us-no-combo', GM_info.script.version);
+  }
+
+  // State: are combo cards currently visible? Default: hidden. Remembered across pages.
+  let showing = localStorage.getItem(STORE_KEY) === '1';
   // Track every cell we've ever flagged as combo, so the toggle can affect them all.
   const flagged = new Set();
 
   const norm = s => (s || '').replace(/ /g, ' ').replace(/\s+/g, ' ').toLowerCase();
-  const isCombo = card => COMBO_MARKERS.some(m => norm(card.textContent).includes(m));
+  const isCombo = card =>
+    !!card.querySelector(BUNDLE_LINK) || COMBO_MARKERS.some(m => norm(card.textContent).includes(m));
 
   function applyVisibility(cell) {
     cell.style.display = showing ? '' : 'none';
   }
 
   function scan(root) {
-    const cards = (root || document).querySelectorAll(CARD_SELECTOR);
-    cards.forEach(card => {
+    // Cells first: a bundle cell may not carry the .search-card-item class.
+    const doc = root || document;
+    const cells = doc.querySelectorAll(CELL_SELECTOR);
+    (cells.length ? cells : doc.querySelectorAll(CARD_SELECTOR)).forEach(card => {
       const cell = card.closest(CELL_SELECTOR) || card;
-      if (cell.dataset.comboProcessed === '1') return;
-      cell.dataset.comboProcessed = '1';
-      if (isCombo(card)) {
+      // Re-check unflagged cells on every scan: a cell can render before its
+      // BundleDeals link hydrates, so a one-shot check misses it.
+      if (flagged.has(cell)) return;
+      if (isCombo(cell)) {
         flagged.add(cell);
         applyVisibility(cell);
       }
@@ -79,29 +92,25 @@
     });
 
     countEl = document.createElement('span');
-    countEl.textContent = '0 Max Combo deals excluded';
+    countEl.textContent = '';
 
-    toggleBtn = document.createElement('button');
-    Object.assign(toggleBtn.style, {
-      background: '#ff4747',
-      color: '#fff',
-      border: 'none',
-      padding: '5px 10px',
-      borderRadius: '6px',
-      font: 'inherit',
-      fontWeight: '600',
-      cursor: 'pointer',
-    });
-    toggleBtn.textContent = 'Show';
-    toggleBtn.addEventListener('click', () => {
-      showing = !showing;
+    // "Hide bundle deals" switch: checked = hidden.
+    const label = document.createElement('label');
+    Object.assign(label.style, { display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '600', cursor: 'pointer' });
+    toggleBtn = document.createElement('input');
+    toggleBtn.type = 'checkbox';
+    toggleBtn.style.cursor = 'pointer';
+    label.appendChild(toggleBtn);
+    label.appendChild(document.createTextNode('Hide bundle deals'));
+    toggleBtn.addEventListener('change', () => {
+      showing = !toggleBtn.checked;
+      localStorage.setItem(STORE_KEY, showing ? '1' : '0');
       flagged.forEach(applyVisibility);
-      toggleBtn.textContent = showing ? 'Hide' : 'Show';
-      toggleBtn.style.background = showing ? '#4a90e2' : '#ff4747';
+      updateBadge();
     });
 
+    badge.appendChild(label);
     badge.appendChild(countEl);
-    badge.appendChild(toggleBtn);
     mountBadge();
   }
 
@@ -118,7 +127,8 @@
   function updateBadge() {
     if (!badge) buildBadge();
     const n = flagged.size;
-    countEl.textContent = `${n} Max Combo deal${n === 1 ? '' : 's'} ${showing ? 'shown' : 'excluded'}`;
+    countEl.textContent = `(${n} ${showing ? 'shown' : 'hidden'})`;
+    toggleBtn.checked = !showing;
     badge.style.display = n === 0 ? 'none' : 'flex';
   }
 
