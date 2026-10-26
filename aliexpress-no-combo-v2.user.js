@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         AliExpress — Hide Combo Deals (with Toggle)
 // @namespace    https://github.com/danielrosehill/AliExpress-No-Combo-Deals
-// @version      2.2.0
-// @description  Hide combo / bundle / "Max Combo" listings from AliExpress. Adds a counter and a Hide bundle deals switch that remembers its setting.
+// @version      2.3.0
+// @description  Hide combo / bundle / "Max Combo" listings from AliExpress. Adds a counter and a Show bundle deals switch (off by default) that remembers its setting.
 // @author       Daniel Rosehill
 // @match        https://*.aliexpress.com/*
 // @match        https://aliexpress.com/*
@@ -94,16 +94,16 @@
     countEl = document.createElement('span');
     countEl.textContent = '';
 
-    // "Hide bundle deals" switch: checked = hidden.
+    // "Show bundle deals" switch: off (unchecked) = hidden, the default.
     const label = document.createElement('label');
     Object.assign(label.style, { display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '600', cursor: 'pointer' });
     toggleBtn = document.createElement('input');
     toggleBtn.type = 'checkbox';
     toggleBtn.style.cursor = 'pointer';
     label.appendChild(toggleBtn);
-    label.appendChild(document.createTextNode('Hide bundle deals'));
+    label.appendChild(document.createTextNode('Show bundle deals'));
     toggleBtn.addEventListener('change', () => {
-      showing = !toggleBtn.checked;
+      showing = toggleBtn.checked;
       localStorage.setItem(STORE_KEY, showing ? '1' : '0');
       flagged.forEach(applyVisibility);
       updateBadge();
@@ -128,7 +128,7 @@
     if (!badge) buildBadge();
     const n = flagged.size;
     countEl.textContent = `(${n} ${showing ? 'shown' : 'hidden'})`;
-    toggleBtn.checked = !showing;
+    toggleBtn.checked = showing;
     badge.style.display = n === 0 ? 'none' : 'flex';
   }
 

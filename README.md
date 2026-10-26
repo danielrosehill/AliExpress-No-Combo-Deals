@@ -97,8 +97,12 @@ https://raw.githubusercontent.com/danielrosehill/AliExpress-No-Combo-Deals/main/
    ![Tampermonkey: Install confirmation](./screenshots/tampermonkey-install.png)
 
 4. Reload any open AliExpress tab. You should see the dark
-   `☑ Hide bundle deals (N hidden)` switch above the search grid (v2.2.0+).
-   Untick it to show them; the setting is remembered across pages.
+   `☐ Show bundle deals (N hidden)` switch above the search grid (v2.3.0+). It
+   is off by default; tick it to show them. The setting is remembered across pages.
+
+Verified live 2026-10-26 (signed in, IL, EN/USD), full 60-card pages: `8BitDo Lite 2`
+7 of 7 bundle cards hidden, `usb c cable` 17 of 17, no ordinary card hidden on
+either, and the switch shows and re-hides all of them.
 
 Tampermonkey/Violentmonkey will also intercept the `.user.js` URL if you
 just click it directly in a browser — same install screen, one fewer
